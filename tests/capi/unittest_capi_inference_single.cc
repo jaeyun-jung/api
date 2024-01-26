@@ -2991,6 +2991,91 @@ TEST (nnstreamer_capi_singleshot, invoke_09_n)
 }
 #endif /* ENABLE_ARMNN */
 
+#ifdef ENABLE_PYTORCH
+TEST (nnstreamer_capi_singleshot, invoke_pytorch)
+{
+  ml_single_h single;
+  ml_tensors_info_h in_info, out_info;
+  ml_tensor_dimension in_dim, out_dim;
+  ml_tensors_data_h input, output;
+  void *input_data, *output_data;
+  gsize input_len, output_len;
+  guint8 score, max_score;
+  gint status, i, max_score_index;
+
+  const gchar *root_path = g_getenv ("MLAPI_SOURCE_ROOT_PATH");
+
+  /* supposed to run test in build directory */
+  if (root_path == NULL)
+    root_path = "..";
+
+  g_autofree gchar *test_model = g_build_filename (
+      root_path, "tests", "test_models", "models", "pytorch_lenet5.pt", NULL);
+  ASSERT_TRUE (g_file_test (test_model, G_FILE_TEST_EXISTS));
+
+  g_autofree gchar *raw_image
+      = g_build_filename (root_path, "tests", "test_models", "data", "9.raw", NULL);
+  ASSERT_TRUE (g_file_test (raw_image, G_FILE_TEST_EXISTS));
+  ASSERT_TRUE (g_file_get_contents (raw_image, (gchar **) &input_data, &input_len, NULL));
+
+  ml_tensors_info_create (&in_info);
+  ml_tensors_info_create (&out_info);
+
+  in_dim[0] = 1;
+  in_dim[1] = 28;
+  in_dim[2] = 28;
+  in_dim[3] = 1;
+  ml_tensors_info_set_count (in_info, 1);
+  ml_tensors_info_set_tensor_type (in_info, 0, ML_TENSOR_TYPE_UINT8);
+  ml_tensors_info_set_tensor_dimension (in_info, 0, in_dim);
+
+  out_dim[0] = 10;
+  out_dim[1] = 1;
+  out_dim[2] = 1;
+  out_dim[3] = 1;
+  ml_tensors_info_set_count (out_info, 1);
+  ml_tensors_info_set_tensor_type (out_info, 0, ML_TENSOR_TYPE_UINT8);
+  ml_tensors_info_set_tensor_dimension (out_info, 0, out_dim);
+
+  status = ml_tensors_data_create (in_info, &input);
+  EXPECT_EQ (status, ML_ERROR_NONE);
+  status = ml_tensors_data_set_tensor_data (input, 0, input_data, input_len);
+  EXPECT_EQ (status, ML_ERROR_NONE);
+
+  status = ml_single_open (&single, test_model, in_info, out_info,
+      ML_NNFW_TYPE_PYTORCH, ML_NNFW_HW_ANY);
+  EXPECT_EQ (status, ML_ERROR_NONE);
+
+  status = ml_single_invoke (single, input, &output);
+  EXPECT_EQ (status, ML_ERROR_NONE);
+
+  status = ml_single_close (single);
+  EXPECT_EQ (status, ML_ERROR_NONE);
+
+  /* Check inference result */
+  status = ml_tensors_data_get_tensor_data (output, 0, &output_data, &output_len);
+  EXPECT_EQ (status, ML_ERROR_NONE);
+
+  max_score = .0;
+  max_score_index = 0;
+  for (i = 0; i < 10; i++) {
+    score = ((uint8_t *) output_data)[i];
+    if (score > max_score) {
+      max_score = score;
+      max_score_index = i;
+    }
+  }
+
+  EXPECT_EQ (max_score_index, 9);
+
+  g_free (input_data);
+  ml_tensors_info_destroy (in_info);
+  ml_tensors_info_destroy (out_info);
+  ml_tensors_data_destroy (input);
+  ml_tensors_data_destroy (output);
+}
+#endif /* ENABLE_PYTORCH */
+
 #ifdef ENABLE_ONNXRUNTIME
 /**
  * @brief Test NNStreamer single shot (ONNX Runtime)

@@ -162,6 +162,15 @@ if armnn_dep.found()
   add_project_arguments('-DENABLE_ARMNN=1', language: ['c', 'cpp'])
 endif
 
+# PyTorch
+pytorch_dep = dependency('pytorch', required: false)
+if not pytorch_dep.found()
+  pytorch_dep = dependency('torch', required: false)
+endif
+if pytorch_dep.found()
+  add_project_arguments('-DENABLE_PYTORCH=1', language: ['c', 'cpp'])
+endif
+
 # ONNX Runtime
 onnxruntime_dep = dependency('libonnxruntime', required: false)
 if onnxruntime_dep.found()

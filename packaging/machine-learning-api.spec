@@ -15,6 +15,7 @@
 %define		tensorflow2_gpu_delegate_support 1
 %define		nnfw_support 1
 %define		armnn_support 0
+%define		pytorch_support 0
 %define		onnxruntime_support 1
 %define		ncnn_support 0
 %define		nntrainer_support 1
@@ -170,6 +171,11 @@ BuildRequires:	nnstreamer-nnfw
 %if 0%{?armnn_support}
 BuildRequires:	armnn-devel
 BuildRequires:	nnstreamer-armnn
+%endif
+
+%if 0%{?pytorch_support}
+BuildRequires:	pytorch-devel
+BuildRequires:	nnstreamer-pytorch
 %endif
 
 %if 0%{?onnxruntime_support}
