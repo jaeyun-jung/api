@@ -303,7 +303,7 @@ _mlrs_get_model_dir_path (_ml_service_offloading_s * offloading_s,
 }
 
 /**
- * @brief Get data from gievn uri
+ * @brief Get data from given uri
  */
 static gboolean
 _mlrs_get_data_from_uri (gchar * uri, GByteArray * array)
